@@ -1,7 +1,11 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownLeft, ExternalLink, Copy } from 'lucide-react';
+import { useChainId } from 'wagmi';
+import blockchainService from '../services/blockchainService';
+import toast from 'react-hot-toast';
 
 const TransactionHistory = ({ transactions }) => {
+  const chainId = useChainId();
   const formatAddress = (address) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
@@ -26,7 +30,7 @@ const TransactionHistory = ({ transactions }) => {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert('Transaction hash copied!');
+    toast.success('Transaction hash copied!');
   };
 
   if (transactions.length === 0) {
@@ -96,9 +100,9 @@ const TransactionHistory = ({ transactions }) => {
                   </button>
                   
                   <button
-                    onClick={() => window.open(`https://etherscan.io/tx/${tx.txHash}`, '_blank')}
+                    onClick={() => window.open(blockchainService.getExplorerUrl(tx.txHash, chainId), '_blank')}
                     className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                    title="View on Etherscan"
+                    title="View on block explorer"
                   >
                     <ExternalLink className="w-3 h-3" />
                   </button>
