@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import PaymentForm from './components/PaymentForm';
 import TransactionHistory from './components/TransactionHistory';
+import BalanceChecker from './components/BalanceChecker';
 import { useAccount } from 'wagmi';
+import { useTransactionMonitor } from './hooks/useTransactionMonitor';
 
 function App() {
   const { isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState('send');
+  const [insufficientBalance, setInsufficientBalance] = useState(false);
+  const transactionMonitor = useTransactionMonitor();
   const [transactions, setTransactions] = useState([
     {
       id: '1',
@@ -33,6 +38,16 @@ function App() {
 
   const addTransaction = (transaction) => {
     setTransactions(prev => [transaction, ...prev]);
+    
+    // Monitor real transactions
+    if (transaction.txHash && transaction.txHash !== 'mock') {
+      transactionMonitor.addTransaction(transaction.txHash, {
+        type: transaction.type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        recipient: transaction.recipient || transaction.sender
+      });
+    }
   };
 
   return (
@@ -73,17 +88,48 @@ function App() {
                 <PaymentForm 
                   activeTab={activeTab} 
                   onTransactionComplete={addTransaction}
+                  insufficientBalance={insufficientBalance}
                 />
               </div>
             </div>
 
-            {/* Transaction History */}
-            <div>
+            {/* Sidebar */}
+            <div className="space-y-6">
+              <BalanceChecker 
+                selectedToken={activeTab === 'send' ? 'ETH' : null}
+                onInsufficientBalance={setInsufficientBalance}
+              />
               <TransactionHistory transactions={transactions} />
             </div>
           </div>
         </main>
       )}
+      
+      {/* Toast notifications */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: 'hsl(220 87% 60%)',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 5000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
     </div>
   );
 }
